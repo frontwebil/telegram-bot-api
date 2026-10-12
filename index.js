@@ -125,20 +125,22 @@ app.post("/api/order", async (req, res) => {
     const order = req.body;
 
     console.log(order);
-    // await prisma.order.create({
-    //   data: {
-    //     name: order.name ?? "",
-    //     status: order.status ?? "New",
-    //     phone: order.phone ?? "",
-    //     adress: order.adress ?? "",
-    //     delivery: order.delivery ?? "",
-    //     paymentType: order.paymentType ?? "",
-    //     prefferContactMethod: order.prefferContactMethod ?? "",
-    //     userChatId: order.userChatId ?? "",
-    //     userTelegram: order.userTelegram ?? "",
-    //     products: order.products ?? "",
-    //   },
-    // });
+
+    console.log("Creating order!");
+    await prisma.order.create({
+      data: {
+        name: order.name ?? "",
+        status: order.status ?? "New",
+        phone: order.phone ?? "",
+        adress: order.adress ?? "",
+        delivery: order.delivery ?? "",
+        paymentType: order.paymentType ?? "",
+        prefferContactMethod: order.prefferContactMethod ?? "",
+        userChatId: order.userChatId ?? "",
+        userTelegram: order.userTelegram ?? "",
+        products: order.products ?? "",
+      },
+    });
 
     console.log("Order is created!");
 
