@@ -129,6 +129,7 @@ app.post("/api/order", async (req, res) => {
     console.log("Creating order!");
     await prisma.order.create({
       data: {
+        id: order.id,
         name: order.name ?? "",
         status: order.status ?? "New",
         phone: order.phone ?? "",

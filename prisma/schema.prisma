@@ -51,7 +51,7 @@ model Product {
 }
 
 model Order {
-  id Int @id
+  id                   BigInt @id
   status String @default("New")
   name String
   phone String
