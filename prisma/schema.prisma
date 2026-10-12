@@ -64,6 +64,7 @@ model Order {
 
   userChatId String
   userTelegram String
+  ttn String?
 
   products Json
 }

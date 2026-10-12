@@ -91,6 +91,80 @@ bot.on("message", async (msg) => {
     });
   }
 
+  if (text === "/orders") {
+    const orders = await prisma.order.findMany({
+      where: {
+        userChatId: String(chat_id),
+      },
+      orderBy: {
+        id: "desc",
+      },
+    });
+
+    if (orders.length === 0) {
+      await api.sendMessage({
+        chat_id,
+        text: "У вас немає замовлень",
+      });
+      return;
+    }
+
+    const statusNames = {
+      New: "Очікує підтвердження",
+      Confirm: "Прийняте",
+      Delived: "У дорозі",
+      Delivered: "Доставлене",
+    };
+
+    for (const [index, order] of orders.entries()) {
+      let products = order.products || [];
+
+      if (typeof products === "string") {
+        try {
+          products = JSON.parse(products);
+        } catch {
+          products = [];
+        }
+      }
+
+      const productsText = Array.isArray(products)
+        ? products
+            .map(
+              (product) =>
+                `• ${product.name}\n` +
+                `  📦 ${product.packageName || product.selectedVariant || "Не вказано"}\n` +
+                `  🔢 Кількість: ${product.quantity}\n` +
+                `  💵 Ціна: ${product.price} грн`,
+            )
+            .join("\n\n")
+        : "Немає інформації про товари";
+
+      const total = Array.isArray(products)
+        ? products.reduce(
+            (sum, product) =>
+              sum +
+              Number(
+                product.totalPrice ??
+                  Number(product.price || 0) * Number(product.quantity || 0),
+              ),
+            0,
+          )
+        : 0;
+
+      const message =
+        `Номер: ${order.id}\n` +
+        `Статус: ${statusNames[order.status] || order.status}\n\n` +
+        `*Товари:*\n${productsText}\n\n` +
+        `*Сума: ${total} грн*`;
+
+      await api.sendMessage({
+        chat_id,
+        text: message,
+        parse_mode: "Markdown",
+      });
+    }
+  }
+
   if (text === "/delivery") {
     await api.sendMessage({
       chat_id,
@@ -124,12 +198,11 @@ app.post("/api/order", async (req, res) => {
   try {
     const order = req.body;
 
-    console.log(order);
+    console.log("Creating order!", order);
 
-    console.log("Creating order!");
     await prisma.order.create({
       data: {
-        id: order.id,
+        id: BigInt(order.id),
         name: order.name ?? "Не вказано",
         status: order.status ?? "New",
         phone: order.phone ?? "",
@@ -137,18 +210,79 @@ app.post("/api/order", async (req, res) => {
         delivery: order.delivery ?? "",
         paymentType: order.paymentType ?? "",
         prefferContactMethod: order.prefferContactMethod ?? "",
-        userChatId: order.userChatId ?? "",
+        userChatId: String(order.userChatId ?? ""),
         userTelegram: order.userTelegram ?? "",
-        products: order.products ?? "",
+        products: order.products ?? [],
       },
     });
 
-    console.log("Order is created!");
+    const products = Array.isArray(order.products) ? order.products : [];
+
+    const deliveryNames = {
+      "nova-poshta": "Нова пошта",
+      "nova-poshta-branch": "Нова пошта - відділення",
+      "nova-poshta-postomat": "Нова пошта - поштомат",
+      ukrposhta: "Укрпошта",
+    };
+
+    const paymentNames = {
+      "cash-on-delivery": "Післяплата",
+      "bank-transfer": "Оплата на банківський рахунок",
+    };
+
+    const contactNames = {
+      telegram: "Telegram",
+      "phone-call": "Телефонний дзвінок",
+    };
+
+    const productsText = products
+      .map(
+        (product, index) =>
+          `${index + 1}. ${product.name}\n` +
+          `   📦 Фасування: ${product.packageName || product.selectedVariant || "Не вказано"}\n` +
+          `   🔢 Кількість: ${product.quantity}\n` +
+          `   💵 Ціна: ${product.price} грн\n` +
+          `   💰 Сума: ${product.totalPrice ?? product.price * product.quantity} грн`,
+      )
+      .join("\n\n");
+
+    const total = products.reduce(
+      (sum, product) =>
+        sum +
+        Number(
+          product.totalPrice ??
+            Number(product.price || 0) * Number(product.quantity || 0),
+        ),
+      0,
+    );
+
+    const notification =
+      `🆕 НОВЕ ЗАМОВЛЕННЯ №${order.id}\n\n` +
+      `👤 Ім'я: ${order.name || "Не вказано"}\n` +
+      `📞 Телефон: ${order.phone || "Не вказано"}\n` +
+      `👤 Telegram: ${order.userTelegram ? "@" + order.userTelegram : "Не вказано"}\n` +
+      `📍 Адреса: ${order.adress || "Не вказано"}\n\n` +
+      `🚚 Доставка: ${deliveryNames[order.delivery] || order.delivery || "Не вказано"}\n` +
+      `💳 Оплата: ${paymentNames[order.paymentType] || order.paymentType || "Не вказано"}\n` +
+      `💬 Зв'язок: ${contactNames[order.prefferContactMethod] || order.prefferContactMethod || "Не вказано"}\n\n` +
+      `🛍 ТОВАРИ:\n${productsText || "Товари не вказані"}\n\n` +
+      `💰 ЗАГАЛЬНА СУМА: ${total} грн\n\n` +
+      `📌 Статус: 🆕 Нове`;
+
+    await api.sendMessage({
+      chat_id: process.env.NOTIFICATION_CHAT,
+      text: notification,
+    });
 
     await api.sendMessage({
       chat_id: order.userChatId,
-      text: "✅ Ваше замовлення прийнято! \n Дякуємо за покупку в India Pharm. \n Очікуйте на подальшу інформацію щодо замовлення.",
+      text:
+        "✅ Ваше замовлення прийнято!\n\n" +
+        "Дякуємо за замовлення в India Pharm.\n" +
+        "Найближчим часом з вами зв'яжеться наш менеджер для уточнення деталей замовлення.",
     });
+
+    console.log("Order is created!");
 
     return res.status(200).json({
       success: true,
