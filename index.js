@@ -299,6 +299,76 @@ app.post("/api/order", async (req, res) => {
   }
 });
 
+app.post("/api/notificationTelegram", async (req, res) => {
+  try {
+    const { order } = req.body;
+
+    if (!order) {
+      return res.status(400).json({
+        success: false,
+        message: "Замовлення не передано",
+      });
+    }
+
+    if (!order.userChatId || !/^\d+$/.test(String(order.userChatId))) {
+      return res.status(400).json({
+        success: false,
+        message: "Некоректний Telegram Chat ID",
+      });
+    }
+
+    const statusMessages = {
+      New: {
+        title: "🆕 Замовлення створено!",
+        description: `Ваше замовлення №${order.id} створено. Очікуйте підтвердження.`,
+      },
+      Confirm: {
+        title: "✅ Замовлення підтвердженно!",
+        description: `Ваше замовлення №${order.id} прийнято в роботу. Очікуйте ТТН пілся відправки. Дякуємо, що обрали India Pharm!`,
+      },
+      Delived: {
+        title: "🚚 Замовлення в дорозі!",
+        description: `Ваше замовлення №${order.id} вже в дорозі.`,
+      },
+      Delivered: {
+        title: "🎉 Замовлення доставлено!",
+        description: `Ваше замовлення №${order.id} доставлено. Дякуємо за покупку в India Pharm!`,
+      },
+    };
+
+    const statusMessage = statusMessages[order.status];
+
+    if (!statusMessage) {
+      return res.status(400).json({
+        success: false,
+        message: `Невідомий статус: ${order.status}`,
+      });
+    }
+
+    const message =
+      `${statusMessage.title}\n\n` +
+      `${statusMessage.description}` +
+      (order.ttn ? `\n\n🔢 Номер ТТН: ${order.ttn}` : "");
+
+    await api.sendMessage({
+      chat_id: order.userChatId,
+      text: message,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Сповіщення надіслано",
+    });
+  } catch (error) {
+    console.error("Telegram notification error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Не вдалося надіслати сповіщення",
+    });
+  }
+});
+
 app.get("/", (req, res) => {
   res.status(200).send("Server is working!");
 });
