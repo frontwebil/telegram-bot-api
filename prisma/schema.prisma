@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String
+  userName String
+  user_id  BigInt @unique
+}
+
+model Product {
+  id                Int      @id
+  name              String
+  category          String?
+  currency          String   @default("UAH")
+  price             Decimal  @db.Decimal(10, 2)
+  minPricePerPill   Decimal? @db.Decimal(10, 2)
+  rating            Float?
+  reviewsCount      Int      @default(0)
+  inProduction      Boolean  @default(false)
+  isSale            Boolean  @default(false)
+  isTop             Boolean  @default(false)
+  url               String?
+  description       String?
+  shortDescription  String?
+  advantages        String?
+  contraindications String?
+  indications       String?
+  overdose          String?
+  sideEffects       String?
+  storage           String?
+  usage             String?
+  characteristics   Json?
+  images            Json?
+  reviews           Json?
+  variants          Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([category])
+  @@index([isSale])
+  @@index([isTop])
+  @@index([inProduction])
+  @@index([name])
+}
+
+model Order {
+  id Int @id
+  status String @default("New")
+  name String
+  phone String
+  adress String
+
+  delivery String
+  paymentType String
+
+  prefferContactMethod String
+
+  userChatId String
+  userTelegram String
+
+  products Json
+}
