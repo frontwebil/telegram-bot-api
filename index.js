@@ -324,14 +324,14 @@ app.post("/api/notificationTelegram", async (req, res) => {
       },
       Confirm: {
         title: "✅ Замовлення підтвердженно!",
-        description: `Ваше замовлення №${order.id} прийнято в роботу. Очікуйте ТТН пілся відправки. Дякуємо, що обрали India Pharm!`,
+        description: `Ваше замовлення №${order.id} прийнято в роботу. Очікуйте ТТН після відправки. Дякуємо, що обрали India Pharm!`,
       },
       Delived: {
-        title: "🚚 Замовлення в дорозі!",
+        title: "Замовлення в дорозі!",
         description: `Ваше замовлення №${order.id} вже в дорозі.`,
       },
       Delivered: {
-        title: "🎉 Замовлення доставлено!",
+        title: "Замовлення доставлено!",
         description: `Ваше замовлення №${order.id} доставлено. Дякуємо за покупку в India Pharm!`,
       },
     };
