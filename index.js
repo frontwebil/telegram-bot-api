@@ -4,7 +4,6 @@ import cors from "cors";
 import express from "express";
 import {
   WELCOME_MESSAGE,
-  FAQ_MESSAGE,
   DELIVERY_MESSAGE,
   BENEFITS_MESSAGE,
   HELP_MESSAGE,
@@ -26,6 +25,8 @@ bot.on("message", async (msg) => {
   const chat_id = msg.update.message.chat.id;
   const text = msg.update.message.text;
   const user_chat = msg.update.message.chat;
+
+  console.log(chat_id)
 
   const isExist = await prisma.user.findMany({
     where: {
@@ -83,14 +84,6 @@ bot.on("message", async (msg) => {
     });
   }
 
-  if (text === "/faq") {
-    await api.sendMessage({
-      chat_id,
-      text: FAQ_MESSAGE,
-      parse_mode: "Markdown",
-    });
-  }
-
   if (text === "/orders") {
     const orders = await prisma.order.findMany({
       where: {
@@ -132,9 +125,9 @@ bot.on("message", async (msg) => {
             .map(
               (product) =>
                 `• ${product.name}\n` +
-                `  📦 ${product.packageName || product.selectedVariant || "Не вказано"}\n` +
-                `  🔢 Кількість: ${product.quantity}\n` +
-                `  💵 Ціна: ${product.price} грн`,
+                `  ${product.packageName || product.selectedVariant || "Не вказано"}\n` +
+                `  Кількість: ${product.quantity}\n` +
+                `  Ціна: ${product.price} грн`,
             )
             .join("\n\n")
         : "Немає інформації про товари";
@@ -190,6 +183,18 @@ bot.on("message", async (msg) => {
   }
 });
 
+api
+  .setMyCommands([
+    { command: "start", description: "🏠 Головне меню" },
+    { command: "catalog", description: "🛍️ Відкрити каталог" },
+    { command: "orders", description: "📦 Мої замовлення" },
+    { command: "delivery", description: "🚚 Доставка та оплата" },
+    { command: "benefits", description: "ℹ️ Інформація про магазин" },
+    { command: "help", description: "💬 Допомога та контакти" },
+  ])
+  .then(() => console.log("Команди бота успішно зареєстровані"))
+  .catch((error) => console.error("Помилка реєстрації команд:", error));
+
 bot.startPolling();
 
 const PORT = 8000;
@@ -233,16 +238,17 @@ app.post("/api/order", async (req, res) => {
     const contactNames = {
       telegram: "Telegram",
       "phone-call": "Телефонний дзвінок",
+      "no-contact": "Не контактувати"
     };
 
     const productsText = products
       .map(
         (product, index) =>
           `${index + 1}. ${product.name}\n` +
-          `   📦 Фасування: ${product.packageName || product.selectedVariant || "Не вказано"}\n` +
-          `   🔢 Кількість: ${product.quantity}\n` +
-          `   💵 Ціна: ${product.price} грн\n` +
-          `   💰 Сума: ${product.totalPrice ?? product.price * product.quantity} грн`,
+          `   Фасування: ${product.packageName || product.selectedVariant || "Не вказано"}\n` +
+          `   Кількість: ${product.quantity}\n` +
+          `   Ціна: ${product.price} грн\n` +
+          `   Сума: ${product.totalPrice ?? product.price * product.quantity} грн`,
       )
       .join("\n\n");
 
@@ -257,17 +263,17 @@ app.post("/api/order", async (req, res) => {
     );
 
     const notification =
-      `🆕 НОВЕ ЗАМОВЛЕННЯ №${order.id}\n\n` +
-      `👤 Ім'я: ${order.name || "Не вказано"}\n` +
-      `📞 Телефон: ${order.phone || "Не вказано"}\n` +
-      `👤 Telegram: ${order.userTelegram ? "@" + order.userTelegram : "Не вказано"}\n` +
-      `📍 Адреса: ${order.adress || "Не вказано"}\n\n` +
-      `🚚 Доставка: ${deliveryNames[order.delivery] || order.delivery || "Не вказано"}\n` +
-      `💳 Оплата: ${paymentNames[order.paymentType] || order.paymentType || "Не вказано"}\n` +
-      `💬 Зв'язок: ${contactNames[order.prefferContactMethod] || order.prefferContactMethod || "Не вказано"}\n\n` +
-      `🛍 ТОВАРИ:\n${productsText || "Товари не вказані"}\n\n` +
-      `💰 ЗАГАЛЬНА СУМА: ${total} грн\n\n` +
-      `📌 Статус: 🆕 Нове`;
+      `НОВЕ ЗАМОВЛЕННЯ №${order.id}\n\n` +
+      `Ім'я: ${order.name || "Не вказано"}\n` +
+      `Телефон: ${order.phone || "Не вказано"}\n` +
+      `Telegram: ${order.userTelegram ? "@" + order.userTelegram : "Не вказано"}\n` +
+      `Адреса: ${order.adress || "Не вказано"}\n\n` +
+      `Доставка: ${deliveryNames[order.delivery] || order.delivery || "Не вказано"}\n` +
+      `Оплата: ${paymentNames[order.paymentType] || order.paymentType || "Не вказано"}\n` +
+      `Зв'язок: ${contactNames[order.prefferContactMethod] || order.prefferContactMethod || "Не вказано"}\n\n` +
+      `ТОВАРИ:\n${productsText || "Товари не вказані"}\n\n` +
+      `ЗАГАЛЬНА СУМА: ${total} грн\n\n` +
+      `Статус: 🆕 Нове`;
 
     await api.sendMessage({
       chat_id: process.env.NOTIFICATION_CHAT,
@@ -277,7 +283,7 @@ app.post("/api/order", async (req, res) => {
     await api.sendMessage({
       chat_id: order.userChatId,
       text:
-        "✅ Ваше замовлення прийнято!\n\n" +
+        "Ваше замовлення прийнято!\n\n" +
         "Дякуємо за замовлення в India Pharm.\n" +
         "Найближчим часом з вами зв'яжеться наш менеджер для уточнення деталей замовлення.",
     });
