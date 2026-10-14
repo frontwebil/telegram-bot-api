@@ -26,7 +26,7 @@ bot.on("message", async (msg) => {
   const text = msg.update.message.text;
   const user_chat = msg.update.message.chat;
 
-  console.log(chat_id)
+  console.log(chat_id);
 
   const isExist = await prisma.user.findMany({
     where: {
@@ -109,7 +109,7 @@ bot.on("message", async (msg) => {
       Delivered: "Доставлене",
     };
 
-    for (const [index, order] of orders.entries()) {
+    for (const order of orders) {
       let products = order.products || [];
 
       if (typeof products === "string") {
@@ -144,8 +144,20 @@ bot.on("message", async (msg) => {
           )
         : 0;
 
+      const createdAt = order.createdAt
+        ? new Date(order.createdAt).toLocaleString("uk-UA", {
+            timeZone: "Europe/Kyiv",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "Не вказано";
+
       const message =
         `Номер: ${order.id}\n` +
+        `Дата замовлення: ${createdAt}\n` +
         `Статус: ${statusNames[order.status] || order.status}\n\n` +
         `*Товари:*\n${productsText}\n\n` +
         `*Сума: ${total} грн*`;
@@ -238,7 +250,7 @@ app.post("/api/order", async (req, res) => {
     const contactNames = {
       telegram: "Telegram",
       "phone-call": "Телефонний дзвінок",
-      "no-contact": "Не контактувати"
+      "no-contact": "Не контактувати",
     };
 
     const productsText = products
