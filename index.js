@@ -11,7 +11,7 @@ import {
 import prisma from "./lib/prisma.js";
 
 const token = process.env.BOT_TOKEN;
-const WEB_APP_URL = "https://india-pharm.vercel.app/";
+const WEB_APP_URL = "https://test-site-learn.vercel.app";
 
 const bot = new Bot(token);
 const api = new Api(token);
@@ -20,6 +20,20 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
+
+function requireApiSecret(req, res, next) {
+  const secret = process.env.API_SECRET;
+  const receivedSecret = req.get("x-api-secret");
+
+  if (!secret || !receivedSecret || receivedSecret !== secret) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+  }
+
+  next();
+}
 
 bot.on("message", async (msg) => {
   const chat_id = msg.update.message.chat.id;
@@ -120,18 +134,6 @@ bot.on("message", async (msg) => {
         }
       }
 
-      const productsText = Array.isArray(products)
-        ? products
-            .map(
-              (product) =>
-                `• ${product.name}\n` +
-                `  ${product.packageName || product.selectedVariant || "Не вказано"}\n` +
-                `  Кількість: ${product.quantity}\n` +
-                `  Ціна: ${product.price} грн`,
-            )
-            .join("\n\n")
-        : "Немає інформації про товари";
-
       const total = Array.isArray(products)
         ? products.reduce(
             (sum, product) =>
@@ -159,7 +161,6 @@ bot.on("message", async (msg) => {
         `Номер: ${order.id}\n` +
         `Дата замовлення: ${createdAt}\n` +
         `Статус: ${statusNames[order.status] || order.status}\n\n` +
-        `*Товари:*\n${productsText}\n\n` +
         `*Сума: ${total} грн*`;
 
       await api.sendMessage({
@@ -211,7 +212,7 @@ bot.startPolling();
 
 const PORT = 8000;
 
-app.post("/api/order", async (req, res) => {
+app.post("/api/order", requireApiSecret , async (req, res) => {
   try {
     const order = req.body;
 
@@ -253,17 +254,6 @@ app.post("/api/order", async (req, res) => {
       "no-contact": "Не контактувати",
     };
 
-    const productsText = products
-      .map(
-        (product, index) =>
-          `${index + 1}. ${product.name}\n` +
-          `   Фасування: ${product.packageName || product.selectedVariant || "Не вказано"}\n` +
-          `   Кількість: ${product.quantity}\n` +
-          `   Ціна: ${product.price} грн\n` +
-          `   Сума: ${product.totalPrice ?? product.price * product.quantity} грн`,
-      )
-      .join("\n\n");
-
     const total = products.reduce(
       (sum, product) =>
         sum +
@@ -275,15 +265,10 @@ app.post("/api/order", async (req, res) => {
     );
 
     const notification =
-      `НОВЕ ЗАМОВЛЕННЯ №${order.id}\n\n` +
+      `НОВЕ ЗАЯВКА №${order.id}\n\n` +
       `Ім'я: ${order.name || "Не вказано"}\n` +
       `Телефон: ${order.phone || "Не вказано"}\n` +
-      `Telegram: ${order.userTelegram ? "@" + order.userTelegram : "Не вказано"}\n` +
-      `Адреса: ${order.adress || "Не вказано"}\n\n` +
-      `Доставка: ${deliveryNames[order.delivery] || order.delivery || "Не вказано"}\n` +
       `Оплата: ${paymentNames[order.paymentType] || order.paymentType || "Не вказано"}\n` +
-      `Зв'язок: ${contactNames[order.prefferContactMethod] || order.prefferContactMethod || "Не вказано"}\n\n` +
-      `ТОВАРИ:\n${productsText || "Товари не вказані"}\n\n` +
       `ЗАГАЛЬНА СУМА: ${total} грн\n\n` +
       `Статус: 🆕 Нове`;
 
@@ -317,7 +302,7 @@ app.post("/api/order", async (req, res) => {
   }
 });
 
-app.post("/api/notificationTelegram", async (req, res) => {
+app.post("/api/notificationTelegram", requireApiSecret , async (req, res) => {
   try {
     const { order } = req.body;
 
