@@ -212,7 +212,7 @@ bot.startPolling();
 
 const PORT = 8000;
 
-app.post("/api/order", requireApiSecret , async (req, res) => {
+app.post("/api/order", requireApiSecret, async (req, res) => {
   try {
     const order = req.body;
 
@@ -272,10 +272,18 @@ app.post("/api/order", requireApiSecret , async (req, res) => {
       `ЗАГАЛЬНА СУМА: ${total} грн\n\n` +
       `Статус: 🆕 Нове`;
 
-    await api.sendMessage({
-      chat_id: process.env.NOTIFICATION_CHAT,
-      text: notification,
-    });
+    const telegramApiUrl = `https://api.telegram.org/bot${process.env.API_BOT_NOTIFICATION}/sendMessage`;
+
+    if (process.env.NOTIFICATION_CHAT) {
+      await fetch(telegramApiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: process.env.NOTIFICATION_CHAT,
+          text: notification,
+        }),
+      });
+    }
 
     await api.sendMessage({
       chat_id: order.userChatId,
@@ -302,7 +310,7 @@ app.post("/api/order", requireApiSecret , async (req, res) => {
   }
 });
 
-app.post("/api/notificationTelegram", requireApiSecret , async (req, res) => {
+app.post("/api/notificationTelegram", requireApiSecret, async (req, res) => {
   try {
     const { order } = req.body;
 
