@@ -83,7 +83,7 @@ bot.on("message", async (msg) => {
   if (text === "/catalog") {
     await api.sendMessage({
       chat_id,
-      text: "Натисніть кнопку нижче, щоб відкрити повний каталог товарів *India Pharm* 👇",
+      text: "Натисніть кнопку нижче, щоб відкрити повний каталог товарів",
       parse_mode: "Markdown",
       reply_markup: {
         inline_keyboard: [
@@ -289,7 +289,7 @@ app.post("/api/order", requireApiSecret, async (req, res) => {
       chat_id: order.userChatId,
       text:
         "Ваше замовлення прийнято!\n\n" +
-        "Дякуємо за замовлення в India Pharm.\n" +
+        "Дякуємо за замовлення.\n" +
         "Найближчим часом з вами зв'яжеться наш менеджер для уточнення деталей замовлення.",
     });
 
@@ -335,7 +335,7 @@ app.post("/api/notificationTelegram", requireApiSecret, async (req, res) => {
       },
       Confirm: {
         title: "✅ Замовлення підтвердженно!",
-        description: `Ваше замовлення №${order.id} прийнято в роботу. Очікуйте ТТН після відправки. Дякуємо, що обрали India Pharm!`,
+        description: `Ваше замовлення №${order.id} прийнято в роботу. Очікуйте ТТН після відправки. Дякуємо, що обрали нас!`,
       },
       Delived: {
         title: "Замовлення в дорозі!",
@@ -343,7 +343,7 @@ app.post("/api/notificationTelegram", requireApiSecret, async (req, res) => {
       },
       Delivered: {
         title: "Замовлення доставлено!",
-        description: `Ваше замовлення №${order.id} доставлено. Дякуємо за покупку в India Pharm!`,
+        description: `Ваше замовлення №${order.id} доставлено. Дякуємо за покупку!`,
       },
     };
 
