@@ -52,9 +52,9 @@ bot.on("message", async (msg) => {
     console.log("Start Creating");
     const user = await prisma.user.create({
       data: {
-        name: user_chat.first_name,
-        user_id: user_chat.id,
-        userName: user_chat.username,
+        name: user_chat.first_name ?? "",
+        user_id: user_chat.id ?? "",
+        userName: user_chat.username ?? "",
       },
     });
 
