@@ -54,7 +54,7 @@ bot.on("message", async (msg) => {
       data: {
         name: user_chat.first_name ?? "",
         user_id: user_chat.id ?? "",
-        userName: user_chat.username ?? "",
+        userName: user_chat.username ?? "Private",
       },
     });
 
