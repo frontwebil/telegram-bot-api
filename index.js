@@ -39,7 +39,7 @@ bot.on("message", async (msg) => {
   const chat_id = msg.update.message.chat.id;
   const text = msg.update.message.text;
   const user_chat = msg.update.message.chat;
-
+  console.log(user_chat.username)
   console.log(chat_id);
 
   const isExist = await prisma.user.findMany({
