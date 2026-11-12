@@ -39,30 +39,29 @@ bot.on("message", async (msg) => {
   const chat_id = msg.update.message.chat.id;
   const text = msg.update.message.text;
   const user_chat = msg.update.message.chat;
-  console.log(user_chat.username)
+  console.log(user_chat.username);
   console.log(chat_id);
 
-  const isExist = await prisma.user.findMany({
-    where: {
-      user_id: chat_id,
-    },
-  });
-
-  if (isExist.length == 0) {
-    console.log("Start Creating");
-    const user = await prisma.user.create({
-      data: {
-        name: user_chat.first_name ?? "",
-        user_id: user_chat.id ?? "",
-        userName: user_chat.username ?? "Private",
+  if (text === "/start") {
+    const isExist = await prisma.user.findMany({
+      where: {
+        user_id: chat_id,
       },
     });
 
-    console.log("User Created");
-    console.log(user);
-  }
+    if (isExist.length == 0) {
+      console.log("Start Creating");
+      const user = await prisma.user.create({
+        data: {
+          name: user_chat.first_name ?? "",
+          user_id: user_chat.id ?? "",
+          userName: user_chat.username ?? "Private",
+        },
+      });
 
-  if (text === "/start") {
+      console.log("User Created");
+      console.log(user);
+    }
     await api.sendMessage({
       chat_id,
       text: WELCOME_MESSAGE,
